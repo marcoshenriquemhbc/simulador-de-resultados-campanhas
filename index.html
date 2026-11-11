@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulador de Campanhas</title>
+<style>
+  :root { --bg:#f4f6fb; --card:#ffffff; --line:#d5dbe8; --txt:#000000; --acc:#2563eb; --ok:#16a34a; --bad:#dc2626; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background:var(--bg); color:var(--txt); padding:24px 16px; }
+  .wrap { max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 24px; margin: 0 0 4px; color:var(--acc); font-weight:800; }
+  .sub { font-size: 14px; margin-bottom: 20px; }
+  .tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  .tab { background:var(--card); border:1px solid var(--line); color:var(--txt); padding:10px 16px; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; }
+  .tab.on { border-color:var(--acc); background:#e8f0ff; color:var(--acc); font-weight:700; }
+  .grid { display:grid; grid-template-columns: 1fr 1fr; gap:16px; align-items:start; }
+  @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:16px; }
+  .card h2 { font-size:15px; margin:0 0 12px; color:var(--acc); font-weight:800; text-transform:uppercase; letter-spacing:.04em; border-bottom:2px solid #dbe7ff; padding-bottom:6px; }
+  .lbl { display:block; font-size:14px; font-weight:700; margin-bottom:12px; }
+  .campo { display:flex; align-items:center; margin-top:5px; background:#f8fafc; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+  .campo:focus-within { border-color:var(--acc); }
+  .campo .af { flex-shrink:0; padding:0 12px; font-weight:700; background:#eef2fa; align-self:stretch; display:flex; align-items:center; border-right:1px solid var(--line); }
+  .campo .af.suf { border-right:none; border-left:1px solid var(--line); }
+  .campo input { flex:1 1 0; width:0; min-width:0; border:none; background:transparent; padding:10px; font-size:16px; font-weight:600; color:var(--txt); }
+  .campo input:focus { outline:none; }
+  .sel { width:100%; margin-top:5px; padding:10px; font-size:15px; font-weight:600; color:var(--txt); background:#f8fafc; border:1px solid var(--line); border-radius:8px; }
+  .destaque { background:#e8f0ff; border:2px solid var(--acc); border-radius:12px; padding:18px; margin-bottom:16px; text-align:right; }
+  .destaque .l { font-size:13px; font-weight:800; color:var(--acc); text-transform:uppercase; letter-spacing:.04em; }
+  .destaque .v { font-size:40px; font-weight:800; margin-top:4px; }
+  .kpis { display:grid; grid-template-columns: repeat(2, 1fr); gap:12px; margin-bottom:16px; }
+  .kpi { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; }
+  .kpi .l { font-size:12px; color:var(--acc); font-weight:800; text-transform:uppercase; letter-spacing:.04em; }
+  .kpi .v { font-size:22px; font-weight:800; margin-top:4px; }
+  .row { display:flex; justify-content:space-between; gap:12px; padding:9px 0; border-bottom:1px solid var(--line); font-size:14px; }
+  .row:last-child { border-bottom:none; }
+  .row span:first-child { font-weight:700; }
+  .row span:last-child { font-weight:800; text-align:right; }
+  .ok { color:var(--ok); } .bad { color:var(--bad); }
+  .note { font-size:12px; margin-top:8px; line-height:1.5; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Simulador de Campanhas</h1>
+  <div class="sub">Defina a meta de pacientes e a ferramenta calcula sozinha quanto investir, quanto faturar e qual o retorno de cada campanha.</div>
+
+  <div class="tabs">
+    <button class="tab on" data-m="seguidor">Seguidores</button>
+    <button class="tab" data-m="lead">Geração de Lead</button>
+    <button class="tab" data-m="venda">Venda direta</button>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Premissas</h2>
+      <div id="campos"></div>
+    </div>
+
+    <div>
+      <div class="destaque" id="destaque">
+        <div class="l" id="sobra-label">-</div>
+        <div class="v" id="sobra-valor">-</div>
+      </div>
+
+      <div class="kpis" id="kpis"></div>
+
+      <div class="card">
+        <h2>Funil necessário</h2>
+        <div id="funil"></div>
+        <div class="row"><span>Lucro bruto (faturamento − ads)</span><span id="lucro">-</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note" id="nota"></div>
+</div>
+
+<script>
+const BRL = new Intl.NumberFormat('pt-BR', { style:'currency', currency:'BRL' });
+const NUM = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 });
+const DEC = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 });
+
+// arredonda para cima (evita 500,00000001 virar 501)
+const cima = x => Math.ceil(x - 1e-9);
+
+const PUBLICO = { frio: 1, morno: 3 };
+
+const MODELOS = {
+  seguidor: {
+    nota: 'Campanha de seguidores: os valores padrão são ilustrativos. Ajuste a taxa de conversão e o custo por seguidor com os dados reais da sua conta.',
+    sobraNome: 'Seguidores que continuam conversando',
+    ticketLabel: 'Ticket médio (R$)',
+    ticketV: 800,
+    convLabel: 'Taxa de conversão',
+    convV: 1,
+    campos: [
+      { id:'cps', label:'Custo por seguidor', v:1.5, tipo:'brl' },
+    ],
+    calc(p) {
+      const seguidores = cima(p.meta / (p.conv / 100));
+      const inv = seguidores * p.cps;
+      return {
+        inv,
+        sobra: seguidores - p.meta,
+        etapas: [['Seguidores necessários', seguidores], ['Pacientes (meta)', p.meta]],
+        kpis: [['Custo por aquisição', p.meta > 0 ? BRL.format(inv / p.meta) : '-']],
+      };
+    }
+  },
+  lead: {
+    nota: 'Geração de lead: o investimento vem direto do custo por lead. Os leads que sobram depois de bater a meta ficam na base.',
+    sobraNome: 'LEADS QUE SOBRARAM NA BASE',
+    ticketLabel: 'Ticket médio (R$)',
+    ticketV: 800,
+    convLabel: 'Taxa de conversão (leads que viram paciente)',
+    convV: 2,
+    campos: [
+      { id:'cpl', label:'Custo por lead', v:5, tipo:'brl' },
+    ],
+    calc(p) {
+      const leads = cima(p.meta / (p.conv / 100));
+      const inv = leads * p.cpl;
+      return {
+        inv,
+        sobra: leads - p.meta,
+        etapas: [['Leads necessários', leads], ['Pacientes (meta)', p.meta]],
+        kpis: [['Custo por aquisição', p.meta > 0 ? BRL.format(inv / p.meta) : '-']],
+      };
+    }
+  },
+  venda: {
+    nota: 'Campanha de aquisição: o público compra o desafio pago (7 dias) e parte desses compradores entra no acompanhamento de 3 meses. O custo por visualização de página é calculado para que o desafio se pague (custo por compra = preço do desafio). A base de clientes são as pessoas que compraram o desafio.',
+    sobraNome: 'BASE DE CLIENTES (COMPRADORES DO DESAFIO)',
+    ticketLabel: 'Preço do desafio de 7 dias (R$)',
+    ticketV: 100,
+    convLabel: 'Taxa de conversão para compra do desafio',
+    convV: 1,
+    campos: [
+      { id:'fech',     label:'% dos compradores do desafio que entram no acompanhamento', v:30, tipo:'pct' },
+      { id:'ticketAc', label:'Ticket do acompanhamento básico de 3 meses (R$)', v:800, tipo:'brl' },
+    ],
+    calc(p) {
+      const compradores = cima(p.meta / (p.fech / 100));
+      const visitantes = cima(compradores / (p.conv / 100));
+      const cpv = p.ticket * (p.conv / 100);
+      const inv = visitantes * cpv;
+      const fatDesafio = compradores * p.ticket;
+      const fatAcomp = p.meta * p.ticketAc;
+      return {
+        inv,
+        fat: fatDesafio + fatAcomp,
+        sobra: compradores,
+        etapas: [
+          ['Visitantes necessários (campanha)', visitantes],
+          ['Compradores do desafio (base de clientes)', compradores],
+          ['Novos pacientes (acompanhamento)', p.meta],
+        ],
+        kpis: [
+          ['Custo por visualização de página', BRL.format(cpv)],
+          ['Custo por compra (desafio)', compradores > 0 ? BRL.format(inv / compradores) : '-'],
+          ['Custo por paciente novo', p.meta > 0 ? BRL.format(inv / p.meta) : '-'],
+          ['Faturamento do desafio', BRL.format(fatDesafio)],
+          ['Faturamento do acompanhamento', BRL.format(fatAcomp)],
+        ],
+      };
+    }
+  }
+};
+
+let modo = 'seguidor';
+const estado = {};
+
+function resetEstado(m) {
+  Object.keys(estado).forEach(k => delete estado[k]);
+  const modelo = MODELOS[m];
+  estado.meta = 10;
+  estado.ticket = modelo.ticketV;
+  estado.conv = modelo.convV;
+  modelo.campos.forEach(c => estado[c.id] = c.v);
+}
+
+function campoHTML(id, label, tipo) {
+  const pre = tipo === 'brl' ? '<span class="af">R$</span>' : '';
+  const suf = tipo === 'pct' ? '<span class="af suf">%</span>' : '';
+  return `<label class="lbl">${label}
+    <div class="campo">${pre}<input type="number" step="any" min="0" data-id="${id}" value="${estado[id]}">${suf}</div>
+  </label>`;
+}
+
+function renderCampos() {
+  const m = MODELOS[modo];
+  const metaLabel = modo === 'venda' ? 'Meta de novos pacientes (acompanhamento)' : 'Meta de novos pacientes';
+
+  let convHTML = campoHTML('conv', m.convLabel, 'pct');
+  if (modo === 'venda') {
+    const tipoPub = Object.keys(PUBLICO).find(k => PUBLICO[k] === estado.conv) || 'outro';
+    convHTML = `<label class="lbl">Tipo de público
+      <select class="sel" id="publico">
+        <option value="frio" ${tipoPub === 'frio' ? 'selected' : ''}>Frio (1%)</option>
+        <option value="morno" ${tipoPub === 'morno' ? 'selected' : ''}>Morno (3%)</option>
+        <option value="outro" ${tipoPub === 'outro' ? 'selected' : ''}>Outro (informar abaixo)</option>
+      </select>
+    </label>` + convHTML;
+  }
+
+  let html = campoHTML('meta', metaLabel, 'num')
+           + campoHTML('ticket', m.ticketLabel, 'brl')
+           + convHTML;
+  m.campos.forEach(c => html += campoHTML(c.id, c.label, c.tipo));
+  document.getElementById('campos').innerHTML = html;
+
+  document.querySelectorAll('#campos input').forEach(el => {
+    el.addEventListener('input', () => {
+      estado[el.dataset.id] = parseFloat(el.value) || 0;
+      atualizar();
+    });
+  });
+
+  const sel = document.getElementById('publico');
+  if (sel) {
+    sel.addEventListener('change', () => {
+      if (sel.value !== 'outro') estado.conv = PUBLICO[sel.value];
+      renderCampos();
+      atualizar();
+    });
+  }
+}
+
+function atualizar() {
+  const m = MODELOS[modo];
+  const valido = estado.conv > 0 && estado.meta > 0;
+  const r = valido ? m.calc({ ...estado, ticket: estado.ticket, ticketAc: estado.ticketAc, fech: estado.fech }) : null;
+
+  const fat = r && r.fat !== undefined ? r.fat : estado.meta * estado.ticket;
+  const inv = r ? r.inv : 0;
+  const roas = r && inv > 0 ? fat / inv : null;
+  const lucro = fat - inv;
+
+  const destaque = document.getElementById('destaque');
+  destaque.style.display = modo === 'seguidor' ? 'none' : 'block';
+  document.getElementById('sobra-label').textContent = m.sobraNome;
+  document.getElementById('sobra-valor').textContent = r ? NUM.format(Math.max(r.sobra, 0)) : '-';
+
+  const kpis = [
+    ['Faturamento total', BRL.format(fat)],
+    ['Investimento em ads', r ? BRL.format(inv) : '-'],
+    ...(r ? r.kpis : []),
+    ['ROAS', roas !== null ? DEC.format(roas) + 'x' : '-'],
+  ];
+  document.getElementById('kpis').innerHTML = kpis.map(([l, v]) =>
+    `<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div></div>`).join('');
+
+  document.getElementById('funil').innerHTML = r ? r.etapas.map(([n, v]) =>
+    `<div class="row"><span>${n}</span><span>${NUM.format(v)}</span></div>`).join('') : '';
+
+  const lucroEl = document.getElementById('lucro');
+  lucroEl.textContent = r ? BRL.format(lucro) : '-';
+  lucroEl.className = lucro >= 0 ? 'ok' : 'bad';
+
+  document.getElementById('nota').textContent = m.nota + ' O lucro bruto não considera custos operacionais, impostos ou tempo da equipe.';
+}
+
+function trocarAba(m) {
+  modo = m;
+  document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x.dataset.m === m));
+  resetEstado(m);
+  renderCampos();
+  atualizar();
+}
+
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => trocarAba(t.dataset.m)));
+
+trocarAba('seguidor');
+</script>
+</body>
+</html>
