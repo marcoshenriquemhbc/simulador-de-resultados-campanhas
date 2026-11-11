@@ -8,24 +8,28 @@
   :root { --bg:#f4f6fb; --card:#ffffff; --line:#d5dbe8; --txt:#000000; --acc:#2563eb; --ok:#16a34a; --bad:#dc2626; }
   * { box-sizing: border-box; }
   body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background:var(--bg); color:var(--txt); padding:24px 16px; }
-  .wrap { max-width: 960px; margin: 0 auto; }
+  .wrap { max-width: 720px; margin: 0 auto; }
   h1 { font-size: 24px; margin: 0 0 4px; color:var(--acc); font-weight:800; }
   .sub { font-size: 14px; margin-bottom: 20px; }
-  .tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
-  .tab { background:var(--card); border:1px solid var(--line); color:var(--txt); padding:10px 16px; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; }
-  .tab.on { border-color:var(--acc); background:#e8f0ff; color:var(--acc); font-weight:700; }
-  .grid { display:grid; grid-template-columns: 1fr 1fr; gap:16px; align-items:start; }
-  @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
-  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:24px; margin-bottom:16px; }
   .card h2 { font-size:15px; margin:0 0 12px; color:var(--acc); font-weight:800; text-transform:uppercase; letter-spacing:.04em; border-bottom:2px solid #dbe7ff; padding-bottom:6px; }
-  .lbl { display:block; font-size:14px; font-weight:700; margin-bottom:12px; }
-  .campo { display:flex; align-items:center; margin-top:5px; background:#f8fafc; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+  .prog { font-size:13px; font-weight:700; color:var(--acc); margin-bottom:8px; }
+  .barra { height:6px; background:#e6ebf5; border-radius:4px; margin-bottom:20px; overflow:hidden; }
+  .barra > div { height:100%; background:var(--acc); transition: width .3s; }
+  .pergunta { font-size:20px; font-weight:800; margin-bottom:16px; }
+  .campo { display:flex; align-items:center; background:#f8fafc; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
   .campo:focus-within { border-color:var(--acc); }
-  .campo .af { flex-shrink:0; padding:0 12px; font-weight:700; background:#eef2fa; align-self:stretch; display:flex; align-items:center; border-right:1px solid var(--line); }
+  .campo .af { flex-shrink:0; padding:0 14px; font-weight:800; background:#eef2fa; align-self:stretch; display:flex; align-items:center; border-right:1px solid var(--line); }
   .campo .af.suf { border-right:none; border-left:1px solid var(--line); }
-  .campo input { flex:1 1 0; width:0; min-width:0; border:none; background:transparent; padding:10px; font-size:16px; font-weight:600; color:var(--txt); }
+  .campo input { flex:1 1 0; width:0; min-width:0; border:none; background:transparent; padding:14px; font-size:18px; font-weight:700; color:var(--txt); }
   .campo input:focus { outline:none; }
-  .sel { width:100%; margin-top:5px; padding:10px; font-size:15px; font-weight:600; color:var(--txt); background:#f8fafc; border:1px solid var(--line); border-radius:8px; }
+  .ajuda { font-size:13px; font-weight:600; margin-top:8px; }
+  .opcoes { display:grid; gap:10px; }
+  .opcao { background:#f8fafc; border:1px solid var(--line); border-radius:10px; padding:14px 16px; font-size:16px; font-weight:700; color:var(--txt); cursor:pointer; text-align:left; }
+  .opcao:hover { border-color:var(--acc); background:#e8f0ff; }
+  .acoes { display:flex; justify-content:space-between; gap:10px; margin-top:20px; flex-wrap:wrap; }
+  .btn { background:var(--acc); color:#fff; border:none; padding:12px 20px; border-radius:10px; cursor:pointer; font-size:15px; font-weight:700; }
+  .btn.sec { background:#fff; color:var(--txt); border:1px solid var(--line); }
   .destaque { background:#e8f0ff; border:2px solid var(--acc); border-radius:12px; padding:18px; margin-bottom:16px; text-align:right; }
   .destaque .l { font-size:13px; font-weight:800; color:var(--acc); text-transform:uppercase; letter-spacing:.04em; }
   .destaque .v { font-size:40px; font-weight:800; margin-top:4px; }
@@ -39,119 +43,88 @@
   .row span:last-child { font-weight:800; text-align:right; }
   .ok { color:var(--ok); } .bad { color:var(--bad); }
   .note { font-size:12px; margin-top:8px; line-height:1.5; }
+  @media (max-width: 520px) { .kpis { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>Simulador de Campanhas</h1>
-  <div class="sub">Defina a meta de pacientes e a ferramenta calcula sozinha quanto investir, quanto faturar e qual o retorno de cada campanha.</div>
-
-  <div class="tabs">
-    <button class="tab on" data-m="seguidor">Seguidores</button>
-    <button class="tab" data-m="lead">Geração de Lead</button>
-    <button class="tab" data-m="venda">Venda direta</button>
-  </div>
-
-  <div class="grid">
-    <div class="card">
-      <h2>Premissas</h2>
-      <div id="campos"></div>
-    </div>
-
-    <div>
-      <div class="destaque" id="destaque">
-        <div class="l" id="sobra-label">-</div>
-        <div class="v" id="sobra-valor">-</div>
-      </div>
-
-      <div class="kpis" id="kpis"></div>
-
-      <div class="card">
-        <h2>Funil necessário</h2>
-        <div id="funil"></div>
-        <div class="row"><span>Lucro bruto (faturamento − ads)</span><span id="lucro">-</span></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="note" id="nota"></div>
+  <div class="sub">Responda as perguntas e veja o cenário no final: quanto investir, quanto faturar e qual o retorno.</div>
+  <div id="app"></div>
 </div>
 
 <script>
 const BRL = new Intl.NumberFormat('pt-BR', { style:'currency', currency:'BRL' });
 const NUM = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 });
 const DEC = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 });
-
-// arredonda para cima (evita 500,00000001 virar 501)
 const cima = x => Math.ceil(x - 1e-9);
-
 const PUBLICO = { frio: 1, morno: 3 };
 
-const MODELOS = {
+// ---------- perguntas de cada tipo de campanha ----------
+const ROTEIROS = {
   seguidor: {
-    nota: 'Campanha de seguidores: os valores padrão são ilustrativos. Ajuste a taxa de conversão e o custo por seguidor com os dados reais da sua conta.',
+    titulo: 'Campanha de seguidores',
     sobraNome: 'Seguidores que continuam conversando',
-    ticketLabel: 'Ticket médio (R$)',
-    ticketV: 800,
-    convLabel: 'Taxa de conversão',
-    convV: 1,
-    campos: [
-      { id:'cps', label:'Custo por seguidor', v:1.5, tipo:'brl' },
+    perguntas: [
+      { id:'meta',   pergunta:'Quantos novos pacientes você quer?', tipo:'num', v:10 },
+      { id:'ticket', pergunta:'Qual é o ticket médio do acompanhamento?', tipo:'brl', v:800 },
+      { id:'conv',   pergunta:'Qual a taxa de conversão de seguidor em paciente?', tipo:'pct', v:1 },
+      { id:'cps',    pergunta:'Quanto custa cada seguidor?', tipo:'brl', v:1.5 },
     ],
+    nota: 'Os valores padrão são ilustrativos. Use os dados reais da sua conta.',
     calc(p) {
       const seguidores = cima(p.meta / (p.conv / 100));
       const inv = seguidores * p.cps;
       return {
-        inv,
-        sobra: seguidores - p.meta,
+        inv, fat: p.meta * p.ticket, sobra: seguidores - p.meta,
         etapas: [['Seguidores necessários', seguidores], ['Pacientes (meta)', p.meta]],
         kpis: [['Custo por aquisição', p.meta > 0 ? BRL.format(inv / p.meta) : '-']],
       };
     }
   },
   lead: {
-    nota: 'Geração de lead: o investimento vem direto do custo por lead. Os leads que sobram depois de bater a meta ficam na base.',
+    titulo: 'Geração de lead',
     sobraNome: 'LEADS QUE SOBRARAM NA BASE',
-    ticketLabel: 'Ticket médio (R$)',
-    ticketV: 800,
-    convLabel: 'Taxa de conversão (leads que viram paciente)',
-    convV: 2,
-    campos: [
-      { id:'cpl', label:'Custo por lead', v:5, tipo:'brl' },
+    perguntas: [
+      { id:'meta',   pergunta:'Quantos novos pacientes você quer?', tipo:'num', v:10 },
+      { id:'ticket', pergunta:'Qual é o ticket médio do acompanhamento?', tipo:'brl', v:800 },
+      { id:'conv',   pergunta:'Qual a taxa de conversão de lead em paciente?', tipo:'pct', v:2 },
+      { id:'cpl',    pergunta:'Quanto custa cada lead?', tipo:'brl', v:5 },
     ],
+    nota: 'Os leads que sobram depois de bater a meta ficam na base.',
     calc(p) {
       const leads = cima(p.meta / (p.conv / 100));
       const inv = leads * p.cpl;
       return {
-        inv,
-        sobra: leads - p.meta,
+        inv, fat: p.meta * p.ticket, sobra: leads - p.meta,
         etapas: [['Leads necessários', leads], ['Pacientes (meta)', p.meta]],
         kpis: [['Custo por aquisição', p.meta > 0 ? BRL.format(inv / p.meta) : '-']],
       };
     }
   },
   venda: {
-    nota: 'Campanha de aquisição: o público compra o desafio pago (7 dias) e parte desses compradores entra no acompanhamento de 3 meses. O custo por visualização de página é calculado para que o desafio se pague (custo por compra = preço do desafio). A base de clientes são as pessoas que compraram o desafio.',
+    titulo: 'Venda direta (aquisição)',
     sobraNome: 'BASE DE CLIENTES (COMPRADORES DO DESAFIO)',
-    ticketLabel: 'Preço do desafio de 7 dias (R$)',
-    ticketV: 100,
-    convLabel: 'Taxa de conversão para compra do desafio',
-    convV: 1,
-    campos: [
-      { id:'fech',     label:'% dos compradores do desafio que entram no acompanhamento', v:30, tipo:'pct' },
-      { id:'ticketAc', label:'Ticket do acompanhamento básico de 3 meses (R$)', v:800, tipo:'brl' },
+    perguntas: [
+      { id:'meta',   pergunta:'Quantos novos pacientes você quer no acompanhamento?', tipo:'num', v:10 },
+      { id:'fech',   pergunta:'Quantos % dos compradores do desafio entram no acompanhamento?', tipo:'pct', v:30 },
+      { id:'publico', pergunta:'Qual o tipo de público da campanha?', tipo:'opcoes', v:'frio',
+        opcoes:[['frio','Público frio (1%)'], ['morno','Público morno (3%)'], ['outro','Outro (informar a taxa)']] },
+      { id:'conv',   pergunta:'Qual a taxa de conversão para compra do desafio?', tipo:'pct', v:1, quando: r => r.publico === 'outro' },
+      { id:'ticket', pergunta:'Qual o preço do desafio de 7 dias?', tipo:'brl', v:100 },
+      { id:'ticketAc', pergunta:'Qual o ticket do acompanhamento básico de 3 meses?', tipo:'brl', v:800 },
     ],
+    nota: 'O custo por visualização de página é calculado para que o desafio se pague (custo por compra = preço do desafio). A base de clientes são as pessoas que compraram o desafio.',
     calc(p) {
+      const conv = p.publico === 'outro' ? p.conv : PUBLICO[p.publico];
       const compradores = cima(p.meta / (p.fech / 100));
-      const visitantes = cima(compradores / (p.conv / 100));
-      const cpv = p.ticket * (p.conv / 100);
+      const visitantes = cima(compradores / (conv / 100));
+      const cpv = p.ticket * (conv / 100);
       const inv = visitantes * cpv;
       const fatDesafio = compradores * p.ticket;
       const fatAcomp = p.meta * p.ticketAc;
       return {
-        inv,
-        fat: fatDesafio + fatAcomp,
-        sobra: compradores,
+        inv, fat: fatDesafio + fatAcomp, sobra: compradores,
         etapas: [
           ['Visitantes necessários (campanha)', visitantes],
           ['Compradores do desafio (base de clientes)', compradores],
@@ -169,110 +142,161 @@ const MODELOS = {
   }
 };
 
-let modo = 'seguidor';
-const estado = {};
+// ---------- estado do quiz ----------
+let tipo = null;   // 'seguidor' | 'lead' | 'venda'
+let respostas = {};
+let passo = 0;     // índice da pergunta atual
+let mostrarResultado = false;
 
-function resetEstado(m) {
-  Object.keys(estado).forEach(k => delete estado[k]);
-  const modelo = MODELOS[m];
-  estado.meta = 10;
-  estado.ticket = modelo.ticketV;
-  estado.conv = modelo.convV;
-  modelo.campos.forEach(c => estado[c.id] = c.v);
+function perguntasAtivas() {
+  return ROTEIROS[tipo].perguntas.filter(q => !q.quando || q.quando(respostas));
 }
 
-function campoHTML(id, label, tipo) {
-  const pre = tipo === 'brl' ? '<span class="af">R$</span>' : '';
-  const suf = tipo === 'pct' ? '<span class="af suf">%</span>' : '';
-  return `<label class="lbl">${label}
-    <div class="campo">${pre}<input type="number" step="any" min="0" data-id="${id}" value="${estado[id]}">${suf}</div>
-  </label>`;
+function iniciar(t) {
+  tipo = t;
+  respostas = {};
+  ROTEIROS[t].perguntas.forEach(q => respostas[q.id] = q.v);
+  passo = 0;
+  mostrarResultado = false;
+  renderizar();
 }
 
-function renderCampos() {
-  const m = MODELOS[modo];
-  const metaLabel = modo === 'venda' ? 'Meta de novos pacientes (acompanhamento)' : 'Meta de novos pacientes';
+function proximo() {
+  const ativas = perguntasAtivas();
+  if (passo < ativas.length - 1) { passo++; }
+  else { mostrarResultado = true; }
+  renderizar();
+}
 
-  let convHTML = campoHTML('conv', m.convLabel, 'pct');
-  if (modo === 'venda') {
-    const tipoPub = Object.keys(PUBLICO).find(k => PUBLICO[k] === estado.conv) || 'outro';
-    convHTML = `<label class="lbl">Tipo de público
-      <select class="sel" id="publico">
-        <option value="frio" ${tipoPub === 'frio' ? 'selected' : ''}>Frio (1%)</option>
-        <option value="morno" ${tipoPub === 'morno' ? 'selected' : ''}>Morno (3%)</option>
-        <option value="outro" ${tipoPub === 'outro' ? 'selected' : ''}>Outro (informar abaixo)</option>
-      </select>
-    </label>` + convHTML;
+function anterior() {
+  if (mostrarResultado) { mostrarResultado = false; passo = perguntasAtivas().length - 1; }
+  else if (passo > 0) { passo--; }
+  renderizar();
+}
+
+function renderizar() {
+  const app = document.getElementById('app');
+  if (!tipo) { app.innerHTML = telaInicial(); return; }
+  if (mostrarResultado) { app.innerHTML = telaResultado(); ligarResultado(); return; }
+  app.innerHTML = telaPergunta();
+  ligarPergunta();
+}
+
+// ---------- telas ----------
+function telaInicial() {
+  return `
+    <div class="card">
+      <h2>Qual campanha você quer simular?</h2>
+      <div class="opcoes">
+        <button class="opcao" data-t="seguidor">Campanha de seguidores</button>
+        <button class="opcao" data-t="lead">Campanha de geração de lead</button>
+        <button class="opcao" data-t="venda">Campanha de venda direta (aquisição)</button>
+      </div>
+    </div>`;
+}
+
+function telaPergunta() {
+  const ativas = perguntasAtivas();
+  const q = ativas[passo];
+  const total = ativas.length;
+  const pct = ((passo + 1) / total) * 100;
+  const valor = respostas[q.id];
+
+  let corpo;
+  if (q.tipo === 'opcoes') {
+    corpo = `<div class="opcoes">` + q.opcoes.map(([v, l]) =>
+      `<button class="opcao" data-op="${v}" ${valor === v ? 'style="border-color:var(--acc);background:#e8f0ff"' : ''}>${l}</button>`).join('') + `</div>`;
+  } else {
+    const pre = q.tipo === 'brl' ? '<span class="af">R$</span>' : '';
+    const suf = q.tipo === 'pct' ? '<span class="af suf">%</span>' : '';
+    corpo = `<div class="campo">${pre}<input id="resp" type="number" step="any" min="0" value="${valor}" autofocus>${suf}</div>`;
   }
 
-  let html = campoHTML('meta', metaLabel, 'num')
-           + campoHTML('ticket', m.ticketLabel, 'brl')
-           + convHTML;
-  m.campos.forEach(c => html += campoHTML(c.id, c.label, c.tipo));
-  document.getElementById('campos').innerHTML = html;
+  const btnVoltar = passo > 0 ? `<button class="btn sec" id="voltar">Voltar</button>` : `<span></span>`;
+  const btnProximo = q.tipo === 'opcoes' ? '' : `<button class="btn" id="proximo">${passo === total - 1 ? 'Ver resultado' : 'Próxima'}</button>`;
 
-  document.querySelectorAll('#campos input').forEach(el => {
-    el.addEventListener('input', () => {
-      estado[el.dataset.id] = parseFloat(el.value) || 0;
-      atualizar();
-    });
+  return `
+    <div class="card">
+      <div class="prog">${ROTEIROS[tipo].titulo} · Pergunta ${passo + 1} de ${total}</div>
+      <div class="barra"><div style="width:${pct}%"></div></div>
+      <div class="pergunta">${q.pergunta}</div>
+      ${corpo}
+      <div class="acoes">${btnVoltar}${btnProximo}</div>
+    </div>`;
+}
+
+function telaResultado() {
+  const R = ROTEIROS[tipo];
+  const r = R.calc({ ...respostas, publico: respostas.publico });
+  const lucro = r.fat - r.inv;
+  const roas = r.inv > 0 ? r.fat / r.inv : null;
+
+  return `
+    <div class="card">
+      <div class="prog">${R.titulo} · Resultado</div>
+      <div class="destaque" style="${tipo === 'seguidor' ? 'display:none' : ''}">
+        <div class="l">${R.sobraNome}</div>
+        <div class="v">${NUM.format(Math.max(r.sobra, 0))}</div>
+      </div>
+      <div class="kpis">
+        <div class="kpi"><div class="l">Faturamento total</div><div class="v">${BRL.format(r.fat)}</div></div>
+        <div class="kpi"><div class="l">Investimento em ads</div><div class="v">${BRL.format(r.inv)}</div></div>
+        ${r.kpis.map(([l, v]) => `<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div></div>`).join('')}
+        <div class="kpi"><div class="l">ROAS</div><div class="v">${roas !== null ? DEC.format(roas) + 'x' : '-'}</div></div>
+      </div>
+      <h2 style="font-size:15px;margin:16px 0 12px;color:var(--acc);font-weight:800;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #dbe7ff;padding-bottom:6px">Funil necessário</h2>
+      ${r.etapas.map(([n, v]) => `<div class="row"><span>${n}</span><span>${NUM.format(v)}</span></div>`).join('')}
+      <div class="row"><span>Lucro bruto (faturamento − ads)</span><span class="${lucro >= 0 ? 'ok' : 'bad'}">${BRL.format(lucro)}</span></div>
+      <div class="note">${R.nota} O lucro bruto não considera custos operacionais, impostos ou tempo da equipe.</div>
+      <div class="acoes">
+        <button class="btn sec" id="editar">Editar respostas</button>
+        <button class="btn sec" id="novo">Nova simulação</button>
+      </div>
+    </div>`;
+}
+
+// ---------- ligações de eventos ----------
+function ligarPergunta() {
+  const ativas = perguntasAtivas();
+  const q = ativas[passo];
+  if (q.tipo === 'opcoes') {
+    document.querySelectorAll('[data-op]').forEach(b => b.addEventListener('click', () => {
+      respostas[q.id] = b.dataset.op;
+      proximo();
+    }));
+  } else {
+    const input = document.getElementById('resp');
+    const avancar = () => { respostas[q.id] = parseFloat(input.value) || 0; proximo(); };
+    document.getElementById('proximo').addEventListener('click', avancar);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') avancar(); });
+    input.focus();
+  }
+  const v = document.getElementById('voltar');
+  if (v) v.addEventListener('click', () => {
+    if (q.tipo !== 'opcoes') respostas[q.id] = parseFloat(document.getElementById('resp').value) || 0;
+    anterior();
   });
-
-  const sel = document.getElementById('publico');
-  if (sel) {
-    sel.addEventListener('change', () => {
-      if (sel.value !== 'outro') estado.conv = PUBLICO[sel.value];
-      renderCampos();
-      atualizar();
-    });
-  }
 }
 
-function atualizar() {
-  const m = MODELOS[modo];
-  const valido = estado.conv > 0 && estado.meta > 0;
-  const r = valido ? m.calc({ ...estado, ticket: estado.ticket, ticketAc: estado.ticketAc, fech: estado.fech }) : null;
-
-  const fat = r && r.fat !== undefined ? r.fat : estado.meta * estado.ticket;
-  const inv = r ? r.inv : 0;
-  const roas = r && inv > 0 ? fat / inv : null;
-  const lucro = fat - inv;
-
-  const destaque = document.getElementById('destaque');
-  destaque.style.display = modo === 'seguidor' ? 'none' : 'block';
-  document.getElementById('sobra-label').textContent = m.sobraNome;
-  document.getElementById('sobra-valor').textContent = r ? NUM.format(Math.max(r.sobra, 0)) : '-';
-
-  const kpis = [
-    ['Faturamento total', BRL.format(fat)],
-    ['Investimento em ads', r ? BRL.format(inv) : '-'],
-    ...(r ? r.kpis : []),
-    ['ROAS', roas !== null ? DEC.format(roas) + 'x' : '-'],
-  ];
-  document.getElementById('kpis').innerHTML = kpis.map(([l, v]) =>
-    `<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div></div>`).join('');
-
-  document.getElementById('funil').innerHTML = r ? r.etapas.map(([n, v]) =>
-    `<div class="row"><span>${n}</span><span>${NUM.format(v)}</span></div>`).join('') : '';
-
-  const lucroEl = document.getElementById('lucro');
-  lucroEl.textContent = r ? BRL.format(lucro) : '-';
-  lucroEl.className = lucro >= 0 ? 'ok' : 'bad';
-
-  document.getElementById('nota').textContent = m.nota + ' O lucro bruto não considera custos operacionais, impostos ou tempo da equipe.';
+function ligarResultado() {
+  document.getElementById('editar').addEventListener('click', () => {
+    mostrarResultado = false;
+    passo = 0;
+    renderizar();
+  });
+  document.getElementById('novo').addEventListener('click', () => {
+    tipo = null;
+    mostrarResultado = false;
+    renderizar();
+  });
 }
 
-function trocarAba(m) {
-  modo = m;
-  document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x.dataset.m === m));
-  resetEstado(m);
-  renderCampos();
-  atualizar();
-}
-
-document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => trocarAba(t.dataset.m)));
-
-trocarAba('seguidor');
+// ---------- início ----------
+document.getElementById('app').addEventListener('click', e => {
+  const b = e.target.closest('[data-t]');
+  if (b) iniciar(b.dataset.t);
+});
+renderizar();
 </script>
 </body>
 </html>
