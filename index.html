@@ -225,6 +225,22 @@ function telaPergunta() {
     </div>`;
 }
 
+function valoresVenda() {
+  const publicoNome = { frio:'Frio', morno:'Morno', outro:'Outro' }[respostas.publico];
+  const conv = respostas.publico === 'outro' ? respostas.conv : PUBLICO[respostas.publico];
+  const linhas = [
+    ['Meta de novos pacientes', NUM.format(respostas.meta)],
+    ['% dos compradores do desafio que entram no acompanhamento', respostas.fech + '%'],
+    ['Tipo de público', publicoNome],
+    ['Taxa de conversão para compra do desafio', conv + '%'],
+    ['Preço do desafio de 7 dias', BRL.format(respostas.ticket)],
+    ['Ticket do acompanhamento básico de 3 meses', BRL.format(respostas.ticketAc)],
+  ];
+  return `
+    <h2 style="font-size:15px;margin:16px 0 12px;color:var(--acc);font-weight:800;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #dbe7ff;padding-bottom:6px">Valores informados</h2>
+    ${linhas.map(([n, v]) => `<div class="row"><span>${n}</span><span>${v}</span></div>`).join('')}`;
+}
+
 function telaResultado() {
   const R = ROTEIROS[tipo];
   const r = R.calc({ ...respostas, publico: respostas.publico });
@@ -234,10 +250,16 @@ function telaResultado() {
   return `
     <div class="card">
       <div class="prog">${R.titulo} · Resultado</div>
+      ${tipo === 'venda' ? `
+      <div class="destaque">
+        <div class="l">FATURAMENTO TOTAL</div>
+        <div class="v">${BRL.format(r.fat)}</div>
+      </div>` : ''}
       <div class="destaque" style="${tipo === 'seguidor' ? 'display:none' : ''}">
         <div class="l">${R.sobraNome}</div>
         <div class="v">${NUM.format(Math.max(r.sobra, 0))}</div>
       </div>
+      ${tipo === 'venda' ? valoresVenda() : ''}
       <div class="kpis">
         <div class="kpi"><div class="l">Faturamento total</div><div class="v">${BRL.format(r.fat)}</div></div>
         <div class="kpi"><div class="l">Investimento em ads</div><div class="v">${BRL.format(r.inv)}</div></div>
